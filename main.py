@@ -17,11 +17,20 @@ server = Server(pool, "/static", debug=True)
 
 
 def initialise_wifi():
+    connected_ok = False
+
     ipv4 =  ipaddress.IPv4Address("192.168.1.101")
     netmask =  ipaddress.IPv4Address("255.255.255.0")
     gateway =  ipaddress.IPv4Address("192.168.1.1")
-    wifi.radio.set_ipv4_address(ipv4=ipv4, netmask=netmask, gateway=gateway)
-    wifi.radio.connect(os.getenv('CIRCUITPY_WIFI_SSID'), os.getenv('CIRCUITPY_WIFI_PASSWORD'))
+    while not connected_ok:
+        wifi.radio.set_ipv4_address(ipv4=ipv4, netmask=netmask, gateway=gateway)
+        wifi.radio.connect(os.getenv('CIRCUITPY_WIFI_SSID'), os.getenv('CIRCUITPY_WIFI_PASSWORD'))
+        time.sleep(0.25)
+        if wifi.radio.ipv4address = None:
+            # Connection failed
+            time.sleep(10)
+        else:
+            connected_ok = True
 
 
 def initialise_sensor():
