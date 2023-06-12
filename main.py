@@ -26,11 +26,12 @@ def initialise_wifi():
         wifi.radio.set_ipv4_address(ipv4=ipv4, netmask=netmask, gateway=gateway)
         wifi.radio.connect(os.getenv('CIRCUITPY_WIFI_SSID'), os.getenv('CIRCUITPY_WIFI_PASSWORD'))
         time.sleep(0.25)
-        if wifi.radio.ipv4address = None:
+        if wifi.radio.ipv4_address is None:
             # Connection failed
             time.sleep(10)
         else:
             connected_ok = True
+    print(f":::: connected to {os.getenv('CIRCUITPY_WIFI_SSID')} ::::\n")
 
 
 def initialise_sensor():
