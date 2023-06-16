@@ -2,9 +2,10 @@ import board, microcontroller
 import os
 import time
 import busio
-import ipaddress, wifi
+import ipaddress, wifi, socketpool
 import json
 import re
+import adafruit_requests
 
 
 UART_TX = microcontroller.pin.GPIO0
@@ -15,9 +16,12 @@ DESTINATION = 'http://192.168.1.4:5300/sensors'
 UPDATE_INTERVAL = 5 * 60    # in seconds
 
 uart = None
+pool = requests = None
 
 
 def initialise_wifi():
+    global pool, requests
+
     connected_ok = False
 
     ipv4 =  ipaddress.IPv4Address("192.168.1.101")
@@ -33,6 +37,10 @@ def initialise_wifi():
         else:
             connected_ok = True
     print(f":::: connected to {os.getenv('CIRCUITPY_WIFI_SSID')} ::::\n")
+
+    pool = socketpool.SocketPool(wifi.radio)
+    requests = adafruit_requests.Session(pool)
+    print(f":::: requests object initialised ::::\n")
 
 
 def initialise_sensor():
@@ -91,6 +99,8 @@ def send_sensor_data(uart):
     data = tmh(uart)
     data["sensor_id"] = SENSOR_ID
     print(f"Sending data {data} ...")
+    resp = requests.post(url=DESTINATION, json=data)
+    print(f"... response code was {resp.status_code}")
 
 
 def start_main_loop(uart):
