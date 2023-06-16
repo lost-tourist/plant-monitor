@@ -1,10 +1,10 @@
-import board, microcontroller, digitalio
+import board, microcontroller
 import os
 import time
 import busio
 import ipaddress, wifi
-import socketpool
 import json
+import re
 
 
 UART_TX = microcontroller.pin.GPIO0
@@ -15,7 +15,6 @@ DESTINATION = 'http://192.168.1.4:5300/sensors'
 UPDATE_INTERVAL = 5 * 60    # in seconds
 
 uart = None
-pool = socketpool.SocketPool(wifi.radio)
 
 
 def initialise_wifi():
@@ -58,6 +57,29 @@ def humidity(uart):
     return _sensor_response("h")
 
 
+def parse_response(key, response):
+    m = re.search(f"{key}=([0-9.]+)", response)
+    if m:
+        return float(m.group(1))
+
+    return 0
+
+
+def tmh(uart):
+    set_LED(uart, True)
+    uart.write(bytearray("twh"))
+    response = uart.read(30)
+    set_LED(uart, False)
+
+    temp = parse_response("t", response)
+    moisture = parse_response("w", response)
+    humidity = parse_response("h", response)
+
+    return {
+        "temp": temp, "moisture": moisture, "humidity": humidity
+    }
+
+
 def set_LED(uart, is_on):
     if is_on:
         uart.write(bytearray("L"))
@@ -65,13 +87,16 @@ def set_LED(uart, is_on):
         uart.write(bytearray("l"))
 
 
-def send_sensor_data():
-    pass
+def send_sensor_data(uart):
+    data = tmh(uart)
+    print(f"Sending data {data} ...")
 
 
-def start_main_loop():
+def start_main_loop(uart):
     while True:
-        send_sensor_data()
+        print(f"Getting sensor data & sending to {DESTINATION}")
+        send_sensor_data(uart)
+        print(f"Sleeping for {UPDATE_INTERVAL} seconds")
         time.sleep(UPDATE_INTERVAL)
 
 
@@ -84,7 +109,7 @@ def main():
     uart = initialise_sensor()
     set_LED(uart, False)
     print(" --> Sensors initialised\n")
-    start_main_loop()
+    start_main_loop(uart)
 
 
 main()
