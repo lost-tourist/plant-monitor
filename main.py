@@ -5,15 +5,17 @@ import busio
 import ipaddress, wifi
 import socketpool
 import json
-from adafruit_httpserver import Server, Request, Response
 
 
 UART_TX = microcontroller.pin.GPIO0
 UART_RX = microcontroller.pin.GPIO1
 
+SENSOR_ID = 1        # needs to be unique per sensor
+DESTINATION = 'http://192.168.1.4:5300/sensors'
+UPDATE_INTERVAL = 5 * 60    # in seconds
+
 uart = None
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool, "/static", debug=True)
 
 
 def initialise_wifi():
@@ -63,29 +65,14 @@ def set_LED(uart, is_on):
         uart.write(bytearray("l"))
 
 
-def start_web_server():
-    server.serve_forever(str(wifi.radio.ipv4_address))
+def send_sensor_data():
+    pass
 
 
-@server.route("/")
-def base(request: Request):
-    """
-    Serve a default static plain text message.
-    """
-    return Response(request, "Hello from the CircuitPython HTTP Server!")
-
-
-@server.route("/sensors")
-def sensor_data(request: Request):
-    set_LED(uart, True)
-    info = {
-        'temperature': temperature(uart),
-        'humidity': humidity(uart),
-        'moisture': moisture(uart)
-    }
-    set_LED(uart, False)
-
-    return Response(request, json.dumps(info))
+def start_main_loop():
+    while True:
+        send_sensor_data()
+        time.sleep(UPDATE_INTERVAL)
 
 
 def main():
@@ -97,8 +84,7 @@ def main():
     uart = initialise_sensor()
     set_LED(uart, False)
     print(" --> Sensors initialised\n")
-    start_web_server()
-    print(" --> Web server running\n")
+    start_main_loop()
 
 
 main()
