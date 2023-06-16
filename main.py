@@ -89,6 +89,7 @@ def set_LED(uart, is_on):
 
 def send_sensor_data(uart):
     data = tmh(uart)
+    data["sensor_id"] = SENSOR_ID
     print(f"Sending data {data} ...")
 
 
